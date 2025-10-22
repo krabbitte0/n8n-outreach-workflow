@@ -1,0 +1,2276 @@
+{
+  "name": "Outreach Workflow 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        -880
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        384,
+        -880
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Loop Over Items",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "instructor-responses",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        432
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Webhook",
+      "webhookId": "REDACTED_VERSION_ID"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.Body }}",
+                    "rightValue": "MYSPOT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "REDACTED_VERSION_ID"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "REDACTED_VERSION_ID",
+                    "leftValue": "={{ $json.body.Body }}",
+                    "rightValue": "MYSPOT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        304,
+        464
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        864
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "d1x1LlDTs1bAJm8t",
+          "name": "Kee Acc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "{{TWILIO_PHONE_NUMBER}}",
+        "to": "={{ $('Webhook').item.json.body.From }}",
+        "message": "={{ $json.output || \"Hey! Something went wrong with our assistant. If you\u2019re still interested, reply MYSPOT and Keelan will follow up. \ud83d\udc4d\" }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        672
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Send_Booking_Link",
+      "credentials": {
+        "twilioApi": {
+          "id": "qeB3al5k5zWTmrXB",
+          "name": "Twilio account - Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        192,
+        -880
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Read_Potential_Clients",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "{{TWILIO_PHONE_NUMBER}}",
+        "to": "={{ $('Read_Potential_Clients').item.json[\"Phone Number\"] }}",
+        "message": "={{ $json[\"Message\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -768
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Send_Outreach",
+      "retryOnFail": false,
+      "credentials": {
+        "twilioApi": {
+          "id": "qeB3al5k5zWTmrXB",
+          "name": "Twilio account - Test"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Phone Number": "={{ $('Read_Potential_Clients').item.json[\"Phone Number\"] }}",
+            "Status": "Messaged"
+          },
+          "matchingColumns": [
+            "Phone Number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booked",
+              "displayName": "Booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1200,
+        -656
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Status_IF_Sent",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $json.error.message || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -768
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Phone Number": "={{ $('Read_Potential_Clients').item.json[\"Phone Number\"] }}",
+            "Status": "Failed"
+          },
+          "matchingColumns": [
+            "Phone Number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booked",
+              "displayName": "Booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1200,
+        -864
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Status_IF_Failed",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "name": "Message",
+              "value": "=Hey, I\u2019m a university student doing a project on AI usage in local businesses.\nI picked driving instructors and was curious \u2014 where do most of your bookings come from?\nWould you be willing to use AI to help you deal with bookings?\n\nWould really appreciate any reply \u2014 just gathering data for my project, Thank you! \ud83d\ude42\n- Keelan",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -768
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Avoid_Business_Name"
+    },
+    {
+      "parameters": {
+        "content": "# \ud83d\udce4 OUTREACH SCHEDULER",
+        "height": 1020,
+        "width": 1660
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -976
+      ],
+      "typeVersion": 1,
+      "id": "REDACTED_VERSION_ID",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# \ud83d\udce5 RESPONSE HANDLER",
+        "height": 960,
+        "width": 2920,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -448,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "REDACTED_VERSION_ID",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        -656
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "amount": 45
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -768
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Wait1",
+      "webhookId": "REDACTED_VERSION_ID"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are replying casually and naturally as a university student studying Business Information Systems. You are working on a project about how local businesses like driving instructors handle bookings.\n\nPrevious messages from this user (phone: {{ $json.body.From }}) are: {{ $node[\"Check_Last_Response\"].json.length > 0 ? $node[\"Check_Last_Response\"].json.map(item => `User: ${item[\"Body\"]} at ${item[\"Sent Timestamp\"]}`).join(\"\\n\") : \"No previous messages\" }}\n\nCurrent message: \"{{ $node['Webhook'].json[0].body.Body }}\"\n\nYour job is to respond simply and naturally. Keep replies short and warm. Only answer if it genuinely helps with the project.\n\nYour goals:\n\n\u2705 If the user mentions **how they get bookings** \u2014 either in this message or in a previous one \u2014 with words like:\n\"Text\", \"Call\", \"Phone\", \"Facebook\", \"Instagram\", \"WhatsApp\", \"Email\", \"Website\", \"App\", \"Calendly\", \"Word of mouth\", \"Recommendation\", \"Referral\", \"Repeat students\", \"Walk-ins\", \"Messenger\":\n\u2192 Thank them casually and **do not ask anything else.** Just reply once and stop.\n\nExample replies:  \n- \"Thanks a million, that\u2019s really helpful for my project \ud83d\ude42\"  \n- \"Appreciate it \u2014 that\u2019s exactly what I needed.\"\n\n\u2705 If the user says they\u2019re **interested in your tool** \u2014 phrases like:\n\"I\u2019d try it\", \"Sounds good\", \"I\u2019d be interested\", \"I\u2019d test it\", \"Let me know\", \"I want to try it\":\n\u2192 Reply warmly and send this message:\n\"Amazing! I\u2019m building a tool that replies to students, books them into your schedule, and updates your calendar automatically. If you\u2019d like to try it, just grab a quick call slot here: {{ONBOARDING_LINK}}\"\n\n\u2705 If the user asks about your project or course (e.g., \u201cwhy do you need to know?\u201d, \u201cwhat course?\u201d, \u201cwhat\u2019s the tool?\u201d):\n\u2192 Say this once:\n\"It\u2019s for my Business Information Systems Project \u2014 just looking at how small businesses like driving instructors handle bookings, and if AI could help with things like replying to students automatically.\"\n\n\u2705 If they ask to see the project or demo:\n\u2192 Say:\n\"It\u2019s still being built, but you can book a call to discuss it further at: {{ONBOARDING_LINK}}\"\n\n\u2705 If the message doesn\u2019t match any of the above:\n\u2192 Treat it as general input for the research. Reply with a casual thank-you or ask a quick clarifying question *only if needed* for the project.\n\n\ud83d\udeab If they say anything unrelated or random (e.g. trolling, jokes, or off-topic chat):\n\u2192 Say:\n\"No worries at all \u2014 I\u2019ll leave it there. Cheers!\"\n\nTone: Real, human, warm. No spammy follow-ups. No emojis unless it feels very natural. Never repeat what they already told you. Don\u2019t keep the conversation going unless it\u2019s useful for the project.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        672
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Assistance_Reply"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_RESPONSE_CATALOG}}",
+          "mode": "list",
+          "cachedResultName": "Response_Catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1353637915"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Phone Number",
+              "lookupValue": "=={{ $json.body.From }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        544,
+        624
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Check_Last_Response",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "name": "MessageTooRecent",
+              "value": "={{\n  $node[\"Check_Last_Response\"].json &&\n  $node[\"Check_Last_Response\"].json[\"Last Message Timestamp\"]\n    ? (new Date().getTime() - new Date($node[\"Check_Last_Response\"].json[\"Last Message Timestamp\"]).getTime())\n    : 9999999\n}}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        624
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Calculate_Recent_Timestamp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $json[\"MessageTooRecent\"] }}",
+              "rightValue": 60000,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $('Webhook').item.json.body.Body }}",
+              "rightValue": "=Liked",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        624
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Recent_Message_Check"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_RESPONSE_CATALOG}}",
+          "mode": "list",
+          "cachedResultName": "Response_Catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1353637915"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Phone Number",
+              "lookupValue": "=={{ $json.body.From }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1712,
+        672
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Lookup_Response_Memory",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $node[\"Lookup_Response_Memory\"].json[\"__rowIndex\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1968,
+        672
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Does_Row_Exist"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_RESPONSE_CATALOG}}",
+          "mode": "list",
+          "cachedResultName": "Response_Catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1353637915"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "row_number": "={{ $node[\"Lookup_Response_Memory\"].json[\"__rowIndex\"] }}",
+            "Source": "AI Intent",
+            "Phone Number": "={{ $ ('Webhook').item.json.body.From }}",
+            "Body": "={{ $('Webhook').item.json.body.Body }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Body",
+              "displayName": "Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2240,
+        560
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Timestamp",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_RESPONSE_CATALOG}}",
+          "mode": "list",
+          "cachedResultName": "Response_Catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1353637915"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $ ('Webhook').item.json.body.From }}",
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Source": "AI Intent",
+            "Body": "={{ $('Webhook').item.json.body.Body }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Body",
+              "displayName": "Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2240,
+        752
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Append_Response_Memory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        480
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $json[\"Phone Number\"] || \"\" }}",
+              "rightValue": "={{ $('Webhook').item.json.body.From }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        352
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Check_Follow_Ups"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UPS}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Ups",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=935521465"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Phone Number",
+              "lookupValue": "={{ $('Webhook').item.json.body.From }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -128,
+        432
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Check_Follow_Ups_Lookup",
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        544,
+        432
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are replying casually and naturally as a university student named Keelan, studying Business Information Systems. You\u2019ve been building a simple AI tool that helps local driving instructors with bookings.\n\nPrevious messages from this user (phone: {{ $json[\"Phone Number\"] }}) are: No previous messages\n\nCurrent message: \"{{ $('Webhook').item.json.body.Body }}\"\n\nYour job is to respond simply, like a real student having a short, polite back-and-forth.\n\nYour goals:\n\n\u2705 If the user expresses interest (e.g., says yes, wants to go ahead, or asks to try it):\n\u2192 Reply warmly and send this link:\n\"\ud83d\ude0a Great! \u2014 please book a quick call to get set up, here\u2019s the link: {{ONBOARDING_LINK}}\"\n\n\u2705 If the user asks questions (e.g., \u201chow does it work?\u201d, \u201cwhat does it do?\u201d):\n\u2192 Answer briefly and naturally. Example:\n\"Yeah no worries! It\u2019s a simple system that replies to students automatically, books them into your schedule, and updates your calendar. It works over text so they don\u2019t have to call you back and forth.\"\n\n\u2705 If they\u2019re unsure or hesitant (e.g., \u201cnot sure yet,\u201d \u201cmaybe later,\u201d \u201csounds interesting but\u2026\u201d):\n\u2192 Stay casual and low-pressure:\n\u201cNo worries at all! \ud83d\ude0a\nIf you\u2019re ever curious about saving time with bookings, just let me know or grab a quick call here: {{ONBOARDING_LINK}}\u201d\n\n\u2705 If they say they\u2019re not interested:\n\u2192 Thank them and end politely:\n\"No problem at all \u2014 appreciate you getting back to me!\"\n\n\u2705 If they say something random or off-topic:\n\u2192 Keep it polite and short:\n\"No worries, Thanks again for responding!\"\n\n\u2705 If the user asks more than two questions across multiple messages, respond: \u2018Happy to dive deeper! Best if we hop on a quick call to cover everything \u2014 here\u2019s the link: {{ONBOARDING_LINK}}'\n(If you say this, do not respond to the question they asked.)\n\n\u2705 If the user asks about price, cost, whether it\u2019s free, or payment details (e.g., \u201cHow much is it?\u201d, \u201cIs it free?\u201d, \u201cWhat\u2019s the cost?\u201d):\nReply: \u201cHappy to go over pricing! \ud83d\ude0a Best to hop on a quick call for all the details: {{ONBOARDING_LINK}}\u201d\n\nTone:\nKeep it short, warm, and human.\nDon\u2019t push or oversell \u2014 your goal is just to help if they\u2019re up for it.\nNo emojis unless it feels totally natural.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        368,
+        144
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        272
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "d1x1LlDTs1bAJm8t",
+          "name": "Kee Acc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "from": "{{TWILIO_PHONE_NUMBER}}",
+        "to": "={{ $('Webhook').item.json.body.From }}",
+        "message": "={{ $json.output || \"Hey! Something went wrong with our assistant. If you\u2019re still interested, reply MYSPOT and Keelan will follow up. \ud83d\udc4d\" }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        752,
+        144
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Send_Booking_Link1",
+      "credentials": {
+        "twilioApi": {
+          "id": "qeB3al5k5zWTmrXB",
+          "name": "Twilio account - Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $node[\"Lookup_Warm_Response_Memory\"].json[\"__rowIndex\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        144
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Does_Row_Exist1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_RESPONSES}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach_Responses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1389346470"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "row_number": "={{ $node[\"Lookup_Warm_Response_Memory\"].json[\"__rowIndex\"] }}",
+            "Source": "AI Intent",
+            "Phone Number": "={{ $ ('Webhook').item.json.body.From }}",
+            "Body": "={{ $('Webhook').item.json.body.Body }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Body",
+              "displayName": "Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1440,
+        80
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Timestamp1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_RESPONSES}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach_Responses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1389346470"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone Number": "={{ $ ('Webhook').item.json.body.From }}",
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Source": "AI Intent",
+            "Body": "={{ $('Webhook').item.json.body.Body }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Body",
+              "displayName": "Body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1440,
+        240
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Append_Response_Memory1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_RESPONSES}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach_Responses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1389346470"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Phone Number",
+              "lookupValue": "=={{ $json.body.From }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        992,
+        144
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Lookup_Warm_Response_Memory",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        384,
+        -416
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Loop Over Items1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "from": "{{TWILIO_PHONE_NUMBER}}",
+        "to": "={{ $('Read_Warm_Clients').item.json[\"Phone Number\"] }}",
+        "message": "={{ $json[\"Message\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -304
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Send_Outreach1",
+      "retryOnFail": false,
+      "credentials": {
+        "twilioApi": {
+          "id": "qeB3al5k5zWTmrXB",
+          "name": "Twilio account - Test"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1663987546"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Phone Number": "={{ $('Read_Warm_Clients').item.json[\"Phone Number\"] }}",
+            "Status": "Messaged"
+          },
+          "matchingColumns": [
+            "Phone Number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booked",
+              "displayName": "Booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1200,
+        -208
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Status_IF_Sent1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "leftValue": "={{ $json.error.message || \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -304
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1663987546"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sent Timestamp": "={{ $now.format('yyyy-LL-dd HH:mm')}}",
+            "Phone Number": "={{ $('Read_Warm_Clients').item.json[\"Phone Number\"] }}",
+            "Status": "Failed"
+          },
+          "matchingColumns": [
+            "Phone Number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent Timestamp",
+              "displayName": "Sent Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Booked",
+              "displayName": "Booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Batch",
+              "displayName": "Batch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1200,
+        -400
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Update_Status_IF_Failed1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        -208
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "No Operation, do nothing3"
+    },
+    {
+      "parameters": {
+        "amount": 45
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -304
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Wait",
+      "webhookId": "REDACTED_VERSION_ID"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13,
+              "triggerAtMinute": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -416
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Schedule Trigger_Warm"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "{{GSHEET_DOC_ID}}",
+          "mode": "list",
+          "cachedResultName": "Potential_Client_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "{{SHEET_GID_FOLLOW_UP_OUTREACH}}",
+          "mode": "list",
+          "cachedResultName": "Follow_Up_Outreach",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/{{GSHEET_DOC_ID}}/edit#gid=1663987546"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        192,
+        -416
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Read_Warm_Clients",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "sBsrDeVSdcurUz6p",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "REDACTED_VERSION_ID",
+              "name": "Message",
+              "value": "=Hey! It\u2019s Keelan again \ud83d\ude42\n\nThanks again for taking part in the project \u2014 really appreciate it!\n\nWhile working on it, I found that 79% of driving instructors manage bookings by text, which can be a real time-drain.\n\nSo I built a simple tool that handles replies, books students into your calendar, and sends them automatic reminders \u2014 all through text.\n\nIf you want, I can get it set up for you in under 24 hours \u2014 just let me know \ud83d\udc4d\n",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        -304
+      ],
+      "id": "REDACTED_VERSION_ID",
+      "name": "Warm_Outreach_MSG"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read_Potential_Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Avoid_Business_Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check_Follow_Ups_Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check_Last_Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Assistance_Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send_Booking_Link": {
+      "main": [
+        [
+          {
+            "node": "Lookup_Response_Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Potential_Clients": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send_Outreach": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Update_Status_IF_Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update_Status_IF_Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avoid_Business_Name": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Status_IF_Failed": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Status_IF_Sent": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Send_Outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assistance_Reply": {
+      "main": [
+        [
+          {
+            "node": "Send_Booking_Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check_Last_Response": {
+      "main": [
+        [
+          {
+            "node": "Calculate_Recent_Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate_Recent_Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Recent_Message_Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup_Response_Memory": {
+      "main": [
+        [
+          {
+            "node": "Does_Row_Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does_Row_Exist": {
+      "main": [
+        [
+          {
+            "node": "Update_Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append_Response_Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recent_Message_Check": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Assistance_Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check_Follow_Ups_Lookup": {
+      "main": [
+        [
+          {
+            "node": "Check_Follow_Ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check_Follow_Ups": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send_Booking_Link1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send_Booking_Link1": {
+      "main": [
+        [
+          {
+            "node": "Lookup_Warm_Response_Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does_Row_Exist1": {
+      "main": [
+        [
+          {
+            "node": "Update_Timestamp1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append_Response_Memory1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup_Warm_Response_Memory": {
+      "main": [
+        [
+          {
+            "node": "Does_Row_Exist1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Warm_Outreach_MSG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send_Outreach1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Status_IF_Sent1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update_Status_IF_Failed1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update_Status_IF_Sent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Status_IF_Failed1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send_Outreach1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger_Warm": {
+      "main": [
+        [
+          {
+            "node": "Read_Warm_Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read_Warm_Clients": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm_Outreach_MSG": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": []
+}
